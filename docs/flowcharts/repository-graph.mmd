@@ -1,0 +1,28 @@
+flowchart TD
+  A["RDA Repository"]
+
+  A --> B["frontend/"]
+  A --> C["backend/"]
+  A --> D["docs/"]
+
+  B --> B1["src/pages"]
+  B --> B2["src/components"]
+  B --> B3["src/context"]
+  B --> B4["src/services/api.js"]
+
+  C --> C1["src/routes"]
+  C --> C2["src/controllers"]
+  C --> C3["src/middleware"]
+  C --> C4["src/models"]
+  C --> C5["prisma/schema.prisma"]
+  C --> C6["src/services/notificationService.js"]
+
+  D --> D1["app-flowchart.mmd"]
+  D --> D2["flowcharts/*.mmd"]
+  D --> D3["launch-day1-checklist.md"]
+
+  B4 -."HTTP /api".-> C1
+  C1 --> C2
+  C2 --> C4
+  C2 --> C5
+  C2 --> C6
