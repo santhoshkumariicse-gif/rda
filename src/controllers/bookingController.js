@@ -2,9 +2,11 @@ const { prisma } = require('../config/database');
 const notificationService = require('../services/notificationService');
 const {
   calculateBookingTotalAmount,
+  calculatePlatformFee,
   serializeBooking,
   toApiBookingStatus,
 } = require('../utils/booking');
+const socketService = require('../services/socketService');
 
 const bookingInclude = {
   owner: {
@@ -50,6 +52,8 @@ exports.createBooking = async (req, res) => {
     const parsedEndDate = parseDate(endDate);
     const sanitizedAgreedRate = Number(agreedRate);
     const totalAmount = calculateBookingTotalAmount(parsedStartDate, parsedEndDate, sanitizedAgreedRate);
+    const platformFee = calculatePlatformFee(totalAmount);
+    const payoutAmount = totalAmount - platformFee;
 
     if (!parsedStartDate || !parsedEndDate) {
       return res.status(400).json({ success: false, message: 'Invalid startDate or endDate' });
@@ -100,6 +104,8 @@ exports.createBooking = async (req, res) => {
         cargo: cargo || undefined,
         agreedRate: sanitizedAgreedRate,
         totalAmount,
+        platformFee,
+        payoutAmount,
         currency: String(currency || 'INR').toUpperCase(),
         status: 'pending',
       },
@@ -109,6 +115,9 @@ exports.createBooking = async (req, res) => {
     notificationService.sendBookingConfirmation(serializeBooking(booking)).catch((err) => {
       console.error('Failed to send booking confirmation:', err.message);
     });
+
+    // Notify driver in real-time
+    socketService.notifyUser(booking.driver?.user?.id, 'new_booking', serializeBooking(booking));
 
     return res.status(201).json({ success: true, booking: serializeBooking(booking) });
   } catch (err) {
@@ -159,6 +168,10 @@ exports.confirmBooking = async (req, res) => {
     }
 
     const booking = await loadBookingWithRelations(req.params.id);
+
+    // Notify owner in real-time
+    socketService.notifyUser(booking.owner?.user?.id, 'booking_confirmed', serializeBooking(booking));
+
     return res.status(200).json({ success: true, booking: serializeBooking(booking) });
   } catch (err) {
     console.error('confirmBooking error:', err);
@@ -229,6 +242,10 @@ exports.cancelBooking = async (req, res) => {
     notificationService.sendCancellationNotice(serializeBooking(updatedBooking)).catch((err) => {
       console.error('Failed to send cancellation notice:', err.message);
     });
+
+    // Notify other party in real-time
+    const otherUserId = isOwner ? updatedBooking.driver?.user?.id : updatedBooking.owner?.user?.id;
+    socketService.notifyUser(otherUserId, 'booking_cancelled', serializeBooking(updatedBooking));
 
     return res.status(200).json({ success: true, booking: serializeBooking(updatedBooking) });
   } catch (err) {

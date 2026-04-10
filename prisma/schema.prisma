@@ -59,6 +59,7 @@ model Driver {
   totalRatings   Int     @default(0)
   totalTrips     Int     @default(0)
   isAvailable    Boolean @default(true)
+  isFeatured     Boolean @default(false)
   isLiveTracking Boolean @default(false)
 
   // liveLocation (embedded)
@@ -152,7 +153,10 @@ model Booking {
 
   agreedRate  Float
   totalAmount Float?
+  platformFee Float?
+  payoutAmount Float?
   currency    String @default("INR")
+  paymentId   String?  @unique
 
   status             BookingStatus @default(pending)
   cancellationReason String?

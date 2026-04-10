@@ -11,6 +11,7 @@ const { validateEnvironment } = require('./config/env');
 const errorHandler = require('./middleware/errorHandler');
 const { sanitizeRequest, securityHeaders } = require('./middleware/security');
 const { authLimiter, chatLimiter, adminLimiter } = require('./middleware/rateLimit');
+const socketService = require('./services/socketService');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -118,6 +119,9 @@ const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
   console.log(`\n🚛  LorryBook API running on port ${PORT} [${process.env.NODE_ENV}]`);
 });
+
+// Initialize Socket.io
+socketService.init(server);
 
 const shutdown = async (signal) => {
   console.log(`Received ${signal}, shutting down gracefully...`);

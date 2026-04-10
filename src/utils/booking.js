@@ -52,8 +52,15 @@ const calculateBookingTotalAmount = (startDate, endDate, agreedRate) => {
   return Math.max(0, clampedDays * Number(agreedRate));
 };
 
+const calculatePlatformFee = (totalAmount, commissionRate = 0.1) => {
+  const amount = Number(totalAmount);
+  if (!Number.isFinite(amount)) return 0;
+  return Math.round(amount * commissionRate * 100) / 100;
+};
+
 module.exports = {
   calculateBookingTotalAmount,
+  calculatePlatformFee,
   sanitizePagination,
   serializeBooking,
   serializeBookings,
