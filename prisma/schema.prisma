@@ -1,0 +1,250 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                  String    @id @default(uuid())
+  name                String
+  email               String    @unique
+  password            String?
+  googleId            String?
+  phone               String?
+  role                Role
+  isVerified          Boolean   @default(false)
+  isActive            Boolean   @default(true)
+  avatar              String?
+  termsAccepted       Boolean   @default(false)
+  termsAcceptedAt     DateTime?
+  termsVersion        String?
+  privacyAccepted     Boolean   @default(false)
+  privacyAcceptedAt   DateTime?
+  privacyVersion      String?
+  resetPasswordToken  String?
+  resetPasswordExpire DateTime?
+  verificationToken   String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  driver     Driver?
+  lorryOwner LorryOwner?
+  wallet     Wallet?
+  auditLogs  AuditLog[]
+}
+
+enum Role {
+  driver
+  owner
+  admin
+}
+
+model Driver {
+  id              String      @id @default(uuid())
+  userId          String      @unique
+  user            User        @relation(fields: [userId], references: [id])
+  licenseNumber   String      @unique
+  licenseType     LicenseType
+  licenseExpiry   DateTime
+  yearsExperience Int         @default(0)
+
+  // baseLocation (embedded) -> JSON or fields
+  baseLocation Json
+
+  averageRating  Float   @default(0)
+  totalRatings   Int     @default(0)
+  totalTrips     Int     @default(0)
+  isAvailable    Boolean @default(true)
+  isLiveTracking Boolean @default(false)
+
+  // liveLocation (embedded)
+  liveLocation Json?
+
+  bio            String?
+  certifications Json? // Array of certification objects
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings     Booking[]
+  availability Availability?
+}
+
+enum LicenseType {
+  HGMV
+  MGV
+  Trailer
+  CEV
+  HazMat
+}
+
+model LorryOwner {
+  id                    String  @id @default(uuid())
+  userId                String  @unique
+  user                  User    @relation(fields: [userId], references: [id])
+  companyName           String
+  companyRegistrationNo String?
+  vatNumber             String?
+
+  // address
+  address Json?
+
+  // contactPerson
+  contactPerson Json?
+
+  totalBookings Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lorries  Lorry[]
+  bookings Booking[]
+}
+
+model Lorry {
+  id                 String      @id @default(uuid())
+  ownerId            String
+  owner              LorryOwner  @relation(fields: [ownerId], references: [id])
+  registrationNumber String      @unique
+  make               String
+  model              String
+  year               Int
+  type               LorryType
+  requiredLicense    LicenseType
+  maxLoadTons        Float
+  isActive           Boolean     @default(true)
+  notes              String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
+}
+
+enum LorryType {
+  Flatbed
+  Curtainsider
+  Box
+  Tipper
+  Tanker
+  Refrigerated
+  LowLoader
+}
+
+model Booking {
+  id       String     @id @default(uuid())
+  ownerId  String
+  owner    LorryOwner @relation(fields: [ownerId], references: [id])
+  driverId String
+  driver   Driver     @relation(fields: [driverId], references: [id])
+  lorryId  String
+  lorry    Lorry      @relation(fields: [lorryId], references: [id])
+
+  startDate       DateTime
+  endDate         DateTime
+  pickupLocation  Json
+  dropoffLocation Json
+  cargo           Json?
+
+  agreedRate  Float
+  totalAmount Float?
+  currency    String @default("INR")
+
+  status             BookingStatus @default(pending)
+  cancellationReason String?
+  cancelledBy        String? // Optional relation
+
+  review           Json?
+  notificationSent Json? // Object with confirmation, reminder, completion flags
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  in_progress
+  completed
+  cancelled
+}
+
+model Availability {
+  id       String @id @default(uuid())
+  driverId String @unique
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  weeklySchedule Json? // array of weekly schedule objects
+  blockedDates   Json? // array of blocked dates
+  extraDates     Json? // array of extra dates
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Wallet {
+  id       String @id @default(uuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id])
+  balance  Float  @default(0)
+  currency String @default("INR")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+}
+
+model Transaction {
+  id             String          @id @default(uuid())
+  walletId       String
+  wallet         Wallet          @relation(fields: [walletId], references: [id])
+  type           TransactionType
+  amount         Float
+  description    String
+  reference      String?
+  referenceModel String?
+  balanceAfter   Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum TransactionType {
+  credit
+  debit
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String
+  resource   String?
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  timestamp  DateTime @default(now())
+  severity   String   @default("LOW")
+}
+
+model Otp {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  otp       String
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model TokenBlacklist {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

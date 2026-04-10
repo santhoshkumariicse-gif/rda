@@ -1,0 +1,30 @@
+Testing driver registration...
+register error: PrismaClientKnownRequestError: 
+Invalid `tx.availability.create()` invocation in
+C:\Users\santh\Desktop\New folder\AI\lorry-driver-booking\backend\src\controllers\authController.js:95:31
+
+  92   }
+  93 });
+  94 
+→ 95 await tx.availability.create(
+Foreign key constraint violated on the constraint: `Availability_driverId_fkey`
+    at ei.handleRequestError (C:\Users\santh\Desktop\New folder\AI\lorry-driver-booking\backend\node_modules\@prisma\client\runtime\library.js:121:7268)
+    at ei.handleAndLogRequestError (C:\Users\santh\Desktop\New folder\AI\lorry-driver-booking\backend\node_modules\@prisma\client\runtime\library.js:121:6593)
+    at ei.request (C:\Users\santh\Desktop\New folder\AI\lorry-driver-booking\backend\node_modules\@prisma\client\runtime\library.js:121:6300)
+    at async a (C:\Users\santh\Desktop\New folder\AI\lorry-driver-booking\backend\node_modules\@prisma\client\runtime\library.js:130:9551)
+    at async C:\Users\santh\Desktop\New folder\AI\lorry-driver-booking\backend\src\controllers\authController.js:95:9
+    at async Proxy._transactionWithCallback (C:\Users\santh\Desktop\New folder\AI\lorry-driver-booking\backend\node_modules\@prisma\client\runtime\library.js:130:8120)
+    at async exports.register (C:\Users\santh\Desktop\New folder\AI\lorry-driver-booking\backend\src\controllers\authController.js:58:18) {
+  code: 'P2003',
+  meta: {
+    modelName: 'Availability',
+    constraint: 'Availability_driverId_fkey'
+  },
+  clientVersion: '6.19.3'
+}
+STATUS: 500
+RESPONSE: {
+  "success": false,
+  "message": "Server error"
+}
+Done.
